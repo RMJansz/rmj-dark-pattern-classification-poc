@@ -12,6 +12,7 @@ class ElementType(enum.Enum):
     OPTONS = 3
 
 class DarkPattern(enum.Enum):
+    SKIPPED = 'Skipped'
     ACCEPTALL = 'Accept all but no reject all' # Maybe rename this one
     CONSENTOPTIONSPRESENCE = 'Consent options presence'
     FALSEHIERARCHY = 'False hierarchy'

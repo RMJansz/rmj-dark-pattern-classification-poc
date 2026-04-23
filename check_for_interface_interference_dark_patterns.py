@@ -1,6 +1,7 @@
 from dark_pattern_enum import DarkPattern, ElementType, lightness_bottom_threshold, lightness_top_threshold, saturation_threshold
 from colorsys import rgb_to_hls
 
+
 # Element of type selector
 def get_element_of_type(elements, type: ElementType):
     elements_of_type = list(filter(lambda e: e[3] == type.value, elements))
@@ -57,7 +58,6 @@ def check_for_false_hierarchy(elements, found_patterns: set[DarkPattern]):
             found_patterns.add(DarkPattern.FALSEHIERARCHY)
 
 def check_for_visual_prominence(elements, found_patterns: set[DarkPattern]):
-    # Maybe merge this with false hierarchy in the taxonomy, double check the differences and why I kept it separate?
     dialog = get_element_of_type(elements, ElementType.DIALOG)
     if dialog == None:
         return
@@ -83,7 +83,7 @@ def check_for_visual_prominence(elements, found_patterns: set[DarkPattern]):
             found_patterns.add(DarkPattern.VISUALPROMINENCE)
 
 # Simple -> at first sight -> consent limitation patterns
-# This is Accept All (+- blablabla in taxonomy, maybe rename)
+# This is Accept All is offered but reject all is not on first screen
 def check_for_no_initial_reject_all(elements, found_patterns: set[DarkPattern]):
     dialog = get_element_of_type(elements, ElementType.DIALOG)
     if dialog == None:
@@ -102,12 +102,15 @@ def check_for_no_disclaimer(elements: list, found_patterns: set[DarkPattern]):
         return True
     return False
 
+# This is just if there is a choice offered
 def check_for_consent_options_presence(elements, found_patterns: set[DarkPattern]):
     dialog = get_element_of_type(elements, ElementType.DIALOG)
     if dialog == None:
         return
+    accept = get_element_of_type(elements, ElementType.ACCEPT)
     reject = get_element_of_type(elements, ElementType.REJECT)
-    if reject == None:
+    options = get_element_of_type(elements, ElementType.OPTONS)
+    if accept == None and reject == None and options == None:
         found_patterns.add(DarkPattern.CONSENTOPTIONSPRESENCE)
 
 # Simple -> at first sight: aesthetic manipulation or consent limitation?
@@ -135,8 +138,29 @@ def check_for_simple_interface_interference_patterns(elements, found_patterns: s
 def check_for_complex_interface_interference_patterns(elements, found_patterns: set[DarkPattern]):
     return
 
+def check_for_skipped(elements: list, found_patterns: set[DarkPattern]):
+    dialog = get_element_of_type(elements, ElementType.DIALOG)
+    if dialog == None:
+        return True
+    
+    result_text = dialog[5]
+    if result_text is None:
+        found_patterns.add(DarkPattern.SKIPPED)
+        return True
+
+    if 'Normal visit' not in result_text and 'No cookie dialog found during visit' not in result_text:
+        found_patterns.add(DarkPattern.SKIPPED)
+        return True
+    
+    return False
+
 # entry point
 def check_for_interface_interference_patterns(elements, found_patterns: set[DarkPattern]):
+    # check if site was skipped
+    skipped = check_for_skipped(elements, found_patterns);
+    if skipped:
+        return
+    
     # Check no disclaimer first since then there is no point checking others
     no_disclaimer = check_for_no_disclaimer(elements, found_patterns)
     if no_disclaimer:
