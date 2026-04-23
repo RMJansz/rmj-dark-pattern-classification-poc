@@ -8,35 +8,40 @@ cursor.execute("""
     CREATE TABLE IF NOT EXISTS spot_check_results (
         site_nr bigint,
         sitename varchar(255),
-        acceptall tinyint,
-        consentoptionspresence tinyint,
-        falsehierarchy tinyint,
-        nodisclaimer tinyint,
-        visualprominence tinyint
+        nooptions tinyint,
+        limitedoptions tinyint,
+        visualinterfaceinterference tinyint
     )
 """)
 conn.commit()
 
 with open('spot_check_results.csv', 'r', newline='', encoding='utf-8') as csvfile:
     reader = csv.DictReader(csvfile)
-    rows_to_insert = [
-        (
+    rows_to_insert = []
+    for row in reader:
+        acceptall = int(row['acceptall'])
+        consentoptionspresence = int(row['consentoptionspresence'])
+        falsehierarchy = int(row['falsehierarchy'])
+        nodisclaimer = int(row['nodisclaimer'])
+        visualprominence = int(row['visualprominence'])
+
+        # New computed columns
+        nooptions = 1 if (nodisclaimer or consentoptionspresence) else 0
+        limitedoptions = 1 if acceptall else 0
+        visualinterfaceinterference = 1 if (falsehierarchy or visualprominence) else 0
+
+        rows_to_insert.append((
             int(row['site_nr']),
             row['sitename'],
-            int(row['acceptall']),
-            int(row['consentoptionspresence']),
-            int(row['falsehierarchy']),
-            int(row['nodisclaimer']),
-            int(row['visualprominence'])
-        )
-        for row in reader
-    ]
+            nooptions,
+            limitedoptions,
+            visualinterfaceinterference
+        ))
 
 cursor.executemany("""
     INSERT INTO spot_check_results (
-        site_nr, sitename, acceptall, consentoptionspresence,
-        falsehierarchy, nodisclaimer, visualprominence
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        site_nr, sitename, nooptions, limitedoptions, visualinterfaceinterference
+    ) VALUES (?, ?, ?, ?, ?)
 """, rows_to_insert)
 
 conn.commit()
