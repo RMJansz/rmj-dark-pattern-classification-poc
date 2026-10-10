@@ -2,6 +2,7 @@ import sqlite3
 import string
 from check_for_object_based_dark_patterns import check_for_object_based_dark_patterns
 from constants_and_enums import DarkPattern
+from element_helpers import check_for_skipped
 
 
 classify_event_based_test_subjects = False
@@ -82,7 +83,9 @@ if classify_object_based_test_subjects:
     for website_rank in ordered_website_rank_numbers:
         elements = get_cookie_dialog_elements_for_website_with_rank(html_elements_database_connection, website_rank)
         foundPatterns = set()
-        check_for_object_based_dark_patterns(elements, foundPatterns)
+        skipped = check_for_skipped(elements, foundPatterns)
+        if not skipped:
+            check_for_object_based_dark_patterns(elements, foundPatterns)
         element = elements[0]
         cursor = html_elements_database_connection.cursor()
         cursor.execute("INSERT OR REPLACE INTO patterns (visit_id, site_nr, sitename, skipped, nooptions, limitedoptions, visualinterfaceinterference) VALUES (?,?,?,?,?,?,?)",
