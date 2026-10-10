@@ -1,5 +1,6 @@
 from constants_and_enums import DarkPattern, ElementType, lightness_bottom_threshold, lightness_top_threshold, saturation_threshold
 from colorsys import rgb_to_hls
+from element_helpers import get_element_of_type
 
 # limited options dark pattern tests
 def check_for_no_initial_reject_all(accept, reject, found_patterns: set[DarkPattern]):
@@ -138,15 +139,6 @@ def check_for_functional_interface_interference_dark_patterns(accept, reject, op
     # current version of the script will only check for options presence dark patterns
     check_for_options_presence_dark_patterns(accept, reject, options, found_patterns)
 
-# object-based dark pattern tests
-def get_element_of_type(elements, type: ElementType):
-    elements_of_type = list(filter(lambda e: e[3] == type.value, elements))
-    if len(elements_of_type) < 1:
-        return None
-    if len(elements_of_type) > 1:
-        raise Exception(f'Found multiple ELEMENTS OF TYPE {type.name}')
-    return elements_of_type[0]
-
 def check_for_interface_interference_dark_patterns(elements, found_patterns: set[DarkPattern]):
     # Check if a cookie dialog was found first since there is no point checking anything else if not
     dialog = get_element_of_type(elements, ElementType.DIALOG)
@@ -174,28 +166,7 @@ def check_for_interface_interference_dark_patterns(elements, found_patterns: set
     if accept == None or reject == None or options == None:
         check_for_functional_interface_interference_dark_patterns(accept, reject, options, found_patterns)
 
-def check_for_skipped(elements: list, found_patterns: set[DarkPattern]):
-    dialog = get_element_of_type(elements, ElementType.DIALOG)
-    if dialog == None:
-        return True
-    
-    result_text = dialog[5]
-    if result_text is None:
-        found_patterns.add(DarkPattern.SKIPPED)
-        return True
-
-    if 'Normal visit' not in result_text and 'No cookie dialog found during visit' not in result_text:
-        found_patterns.add(DarkPattern.SKIPPED)
-        return True
-    
-    return False
-
 # entry point
 def check_for_object_based_dark_patterns(elements, found_patterns: set[DarkPattern]):
-    # check if site was skipped
-    skipped = check_for_skipped(elements, found_patterns)
-    if skipped:
-        return
-    
     # currently all object-based patterns lead to interface interference patterns. No testing needed
     check_for_interface_interference_dark_patterns(elements, found_patterns)
